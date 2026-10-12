@@ -1,21 +1,21 @@
-# Laravel + Claude Code --- Pipeline de Qualidade, Sloppy, Code Review e IA
+# Laravel + Claude Code --- Quality, Sloppy, Code Review and AI Pipeline
 
-Este documento define um pipeline recomendado para desenvolver
-aplicações **PHP/Laravel com Claude Code**, combinando ferramentas
-determinísticas, análise específica para código produzido por agentes,
-testes, code review e CI.
+This document defines a recommended pipeline for developing
+**PHP/Laravel applications with Claude Code**, combining deterministic
+tools, analysis specific to agent-produced code, tests, code review
+and CI.
 
-> **A IA implementa. Sloppy vigia o agente. As ferramentas verificam.
-> Outro contexto revisa. O CI valida.**
+> **The AI implements. Sloppy watches the agent. The tools verify.
+> Another context reviews. CI validates.**
 
 ------------------------------------------------------------------------
 
-## 1. Objetivo
+## 1. Goal
 
-O Claude não deve decidir sozinho se uma tarefa está concluída.
+Claude should not decide on its own whether a task is complete.
 
-O código só é considerado pronto depois de passar por múltiplas camadas
-independentes:
+Code is only considered ready after passing through multiple
+independent layers:
 
 ``` text
 Claude Code
@@ -23,10 +23,10 @@ Claude Code
     ├── Laravel Boost / MCP
     │
     ▼
-Implementação
+Implementation
     │
-    ├── Sloppy hook após edição
-    │       └── finding novo → Claude corrige imediatamente
+    ├── Sloppy hook after edit
+    │       └── new finding → Claude fixes it immediately
     │
     ▼
 Laravel Pint
@@ -51,7 +51,7 @@ Sloppy Diff / Review
 composer quality
     │
     ▼
-AI Code Review independente
+Independent AI Code Review
     │
     ▼
 GitHub Actions
@@ -68,7 +68,7 @@ Merge
 
 ------------------------------------------------------------------------
 
-## 2. Stack recomendada
+## 2. Recommended stack
 
 ### Framework
 
@@ -76,21 +76,21 @@ Merge
 -   Laravel
 -   Composer
 
-### IA
+### AI
 
 -   Claude Code
 -   Laravel Boost
 -   MCP
 -   Sloppy
 
-### Qualidade
+### Quality
 
 -   Laravel Pint
 -   Larastan / PHPStan
 -   Sloppy
 -   Composer Audit
 
-### Testes
+### Tests
 
 -   Pest
 -   Feature Tests
@@ -106,22 +106,22 @@ Merge
 -   AI Code Review
 -   Human Review
 
-### Automação
+### Automation
 
 -   Composer Scripts
 -   Claude Code Hooks
 -   GitHub Actions
 
-### Opcional
+### Optional
 
 -   Rector
 -   Deptrac
 
 ------------------------------------------------------------------------
 
-## 3. Instalação
+## 3. Installation
 
-Instale as ferramentas principais:
+Install the core tools:
 
 ``` bash
 composer require --dev \
@@ -133,169 +133,169 @@ composer require --dev \
     heyosseus/sloppy
 ```
 
-Depois configure a integração do Sloppy com Claude Code:
+Then configure Sloppy's integration with Claude Code:
 
 ``` bash
 vendor/bin/sloppy agents install
 ```
 
-Em Laravel, o Sloppy também pode ser executado por:
+In Laravel, Sloppy can also be run via:
 
 ``` bash
 php artisan sloppy
 ```
 
-Configure também o **Laravel Boost** para fornecer ao agente contexto do
-framework, documentação e informações compatíveis com as versões
-utilizadas no projeto.
+Also configure **Laravel Boost** to provide the agent with framework
+context, documentation and information compatible with the versions
+used in the project.
 
 ------------------------------------------------------------------------
 
-## 4. Por que Sloppy entra no pipeline
+## 4. Why Sloppy is part of the pipeline
 
-O Sloppy é uma camada complementar a Pint, PHPStan e Pest.
+Sloppy is a layer that complements Pint, PHPStan and Pest.
 
-Cada ferramenta responde a uma pergunta diferente:
+Each tool answers a different question:
 
 ``` text
 Pint
-└── O código está formatado?
+└── Is the code formatted correctly?
 
 PHPStan / Larastan
-└── Os tipos e contratos estáticos estão corretos?
+└── Are the static types and contracts correct?
 
 Pest
-└── O comportamento esperado funciona?
+└── Does the expected behavior work?
 
 Architecture Tests
-└── As regras arquiteturais verificáveis continuam válidas?
+└── Do the checkable architectural rules still hold?
 
 Sloppy
-└── O agente introduziu dívida, padrões ruins ou regressões
-    típicas de código produzido rapidamente por IA?
+└── Did the agent introduce debt, bad patterns or regressions
+    typical of code produced quickly by AI?
 
 AI Code Review
-└── Existe algum problema semântico/contextual que as
-    ferramentas determinísticas não identificaram?
+└── Is there a semantic/contextual problem that the
+    deterministic tools didn't catch?
 ```
 
-O Sloppy é particularmente útil porque trabalha sobre **novos problemas
-introduzidos pela alteração**, evitando que o agente saia corrigindo
-dívida histórica que não pertence à tarefa atual.
+Sloppy is particularly useful because it works on **new problems
+introduced by the change**, keeping the agent from wandering off to
+fix historical debt that doesn't belong to the current task.
 
 ------------------------------------------------------------------------
 
-## 5. Sloppy dentro do loop do Claude
+## 5. Sloppy inside Claude's loop
 
-O Sloppy deve rodar durante o desenvolvimento, e não apenas no CI.
+Sloppy should run during development, not only in CI.
 
-Após instalar os hooks:
+After installing the hooks:
 
 ``` bash
 vendor/bin/sloppy agents install
 ```
 
-o fluxo esperado é:
+the expected flow is:
 
 ``` text
-Claude altera arquivo PHP
+Claude changes a PHP file
         │
         ▼
-Sloppy analisa a alteração
+Sloppy analyses the change
         │
-        ├── finding novo
+        ├── new finding
         │       │
         │       ▼
-        │   Claude corrige
+        │   Claude fixes it
         │       │
         │       └──────┐
         │              │
         ▼              │
-      limpo ◄───────────┘
+      clean ◄───────────┘
         │
         ▼
-Claude continua
+Claude continues
 ```
 
-Quando o agente tenta finalizar uma tarefa, novos findings acima do
-threshold configurado devem fazê-lo voltar para a correção.
+When the agent tries to finish a task, new findings above the
+configured threshold should send it back to fix them.
 
-Isso cria um feedback loop muito mais curto:
+This creates a much shorter feedback loop:
 
 ``` text
-gerar → analisar → corrigir → continuar
+generate → analyse → fix → continue
 ```
 
-em vez de:
+instead of:
 
 ``` text
-gerar tudo → abrir PR → descobrir problemas no review
+generate everything → open PR → find problems during review
 ```
 
 ------------------------------------------------------------------------
 
-## 6. O que o Sloppy procura
+## 6. What Sloppy looks for
 
-Entre as categorias analisadas estão:
+Among the categories analysed:
 
--   complexidade excessiva;
+-   excessive complexity;
 -   god methods;
 -   god classes;
--   nesting excessivo;
--   lógica duplicada;
+-   excessive nesting;
+-   duplicate logic;
 -   copy/paste drift;
--   métodos privados mortos;
--   dependências de construtor não utilizadas;
--   implementações placeholder;
--   exceções engolidas;
--   condições redundantes;
--   comentários narrativos;
--   defensive programming desnecessário;
--   business logic em controllers;
--   validação inline;
--   chamadas externas diretas;
--   models fazendo responsabilidades demais;
--   possíveis N+1;
--   queries dentro de loops;
--   uso de Collection quando a query deveria resolver;
--   `Model::all()` suspeito;
--   excesso de dependências em controllers/services;
--   abstrações desnecessárias;
--   wrappers vazios;
--   abstrações usadas uma única vez;
--   suppressions sem explicação;
--   crescimento de baseline PHPStan/Psalm;
--   testes enfraquecidos para fazer o pipeline passar.
+-   dead private methods;
+-   unused constructor dependencies;
+-   placeholder implementations;
+-   swallowed exceptions;
+-   redundant conditions;
+-   narrative comments;
+-   unnecessary defensive programming;
+-   business logic in controllers;
+-   inline validation;
+-   direct external calls;
+-   models taking on too many responsibilities;
+-   possible N+1s;
+-   queries inside loops;
+-   using a Collection when the query should resolve it;
+-   suspicious `Model::all()`;
+-   excessive dependencies in controllers/services;
+-   unnecessary abstractions;
+-   empty wrappers;
+-   single-use abstractions;
+-   unexplained suppressions;
+-   PHPStan/Psalm baseline growth;
+-   tests weakened just to make the pipeline pass.
 
-Isso é especialmente relevante em workflows com agentes, pois vários
-desses problemas não são necessariamente erros de sintaxe ou de tipos.
+This is especially relevant in agent workflows, since several of
+these problems are not necessarily syntax or type errors.
 
 ------------------------------------------------------------------------
 
 ## 7. Laravel Pint
 
-Verificação:
+Check:
 
 ``` bash
 vendor/bin/pint --test
 ```
 
-Correção:
+Fix:
 
 ``` bash
 vendor/bin/pint
 ```
 
-O Pint é responsável pela padronização mecânica do código.
+Pint is responsible for mechanical code standardization.
 
-Não desperdice o AI Code Review discutindo formatação que o Pint
-consegue resolver deterministicamente.
+Don't waste the AI Code Review discussing formatting that Pint can
+resolve deterministically.
 
 ------------------------------------------------------------------------
 
 ## 8. Larastan + PHPStan
 
-Exemplo de `phpstan.neon`:
+Example `phpstan.neon`:
 
 ``` neon
 includes:
@@ -310,59 +310,59 @@ parameters:
     treatPhpDocTypesAsCertain: false
 ```
 
-Para projetos novos, evolua progressivamente para:
+For new projects, gradually evolve to:
 
 ``` neon
 level: 10
 ```
 
-### Projetos legados
+### Legacy projects
 
-Em projetos existentes:
+In existing projects:
 
 ``` bash
 vendor/bin/phpstan analyse --generate-baseline
 ```
 
-O baseline deve representar dívida histórica.
+The baseline should represent historical debt.
 
-Nunca regenere o baseline apenas para esconder novos erros.
+Never regenerate the baseline just to hide new errors.
 
-O Sloppy também pode detectar crescimento indevido de baselines,
-adicionando outra proteção contra esse tipo de atalho.
+Sloppy can also detect improper baseline growth, adding another
+safeguard against that kind of shortcut.
 
 ------------------------------------------------------------------------
 
 ## 9. Pest
 
-Execute:
+Run:
 
 ``` bash
 vendor/bin/pest --parallel
 ```
 
-Toda alteração comportamental deve possuir testes.
+Every behavioral change must have tests.
 
-Priorize:
+Prioritize:
 
 1.  Feature Tests;
-2.  Unit Tests para lógica isolada;
+2.  Unit Tests for isolated logic;
 3.  Regression Tests.
 
-Teste pelo menos:
+Test at least:
 
 -   happy path;
--   validação;
--   autorização;
+-   validation;
+-   authorization;
 -   failure paths;
--   edge cases importantes;
--   regressões.
+-   important edge cases;
+-   regressions.
 
 ------------------------------------------------------------------------
 
 ## 10. Architecture Tests
 
-Exemplo:
+Example:
 
 ``` php
 <?php
@@ -388,16 +388,16 @@ arch()->preset()->security();
 arch()->preset()->laravel();
 ```
 
-Architecture Tests transformam decisões arquiteturais em regras
-executáveis.
+Architecture Tests turn architectural decisions into executable
+rules.
 
 ------------------------------------------------------------------------
 
-## 11. Sloppy integrado ao Pest
+## 11. Sloppy integrated into Pest
 
-O Sloppy pode participar diretamente da suite Pest.
+Sloppy can participate directly in the Pest suite.
 
-Exemplo:
+Example:
 
 ``` php
 it('has no new slop on this branch', function (): void {
@@ -405,19 +405,18 @@ it('has no new slop on this branch', function (): void {
 });
 ```
 
-Isso significa que dívida nova detectada pelo Sloppy pode quebrar a
-suite de testes.
+This means new debt detected by Sloppy can break the test suite.
 
-O benefício é importante:
+The benefit is significant:
 
 ``` text
-regra do projeto
+project rule
       ↓
-teste executável
+executable test
       ↓
 CI
       ↓
-merge bloqueado
+merge blocked
 ```
 
 ------------------------------------------------------------------------
@@ -428,19 +427,19 @@ merge bloqueado
 vendor/bin/pest --type-coverage --min=95
 ```
 
-Para projetos novos, considere evoluir para:
+For new projects, consider evolving to:
 
 ``` bash
 vendor/bin/pest --type-coverage --min=100
 ```
 
-Evite:
+Avoid:
 
 ``` php
 function calculate($value)
 ```
 
-Prefira, quando apropriado:
+Prefer, when appropriate:
 
 ``` php
 public function calculate(Money $value): Money
@@ -450,7 +449,7 @@ public function calculate(Money $value): Money
 
 ## 13. Mutation Testing
 
-Para verificar a qualidade real dos testes:
+To check the real quality of the tests:
 
 ``` bash
 vendor/bin/pest \
@@ -460,65 +459,66 @@ vendor/bin/pest \
     --min=80
 ```
 
-Como mutation testing é mais caro, uma estratégia possível é executá-lo:
+Since mutation testing is more expensive, a possible strategy is to
+run it:
 
 -   nightly;
--   em PRs críticos;
--   antes de releases;
--   em módulos sensíveis.
+-   on critical PRs;
+-   before releases;
+-   on sensitive modules.
 
 ------------------------------------------------------------------------
 
 ## 14. Composer Audit
 
-Inclua:
+Include:
 
 ``` bash
 composer audit
 ```
 
-A verificação de vulnerabilidades conhecidas deve fazer parte do CI.
+Checking for known vulnerabilities should be part of CI.
 
 ------------------------------------------------------------------------
 
 ## 15. Sloppy Diff
 
-Durante uma feature branch:
+During a feature branch:
 
 ``` bash
 vendor/bin/sloppy diff main
 ```
 
-O objetivo é analisar somente os problemas introduzidos pela branch.
+The goal is to analyse only the problems introduced by the branch.
 
-Isso é especialmente importante em projetos legados:
+This is especially important in legacy projects:
 
 ``` text
-dívida histórica
+historical debt
       │
-      ├── não pertence à tarefa
+      ├── doesn't belong to the task
       │
       └── baseline
 
-mudança atual
+current change
       │
-      └── não pode introduzir dívida nova
+      └── cannot introduce new debt
 ```
 
 ------------------------------------------------------------------------
 
 ## 16. Sloppy Review
 
-Antes do AI Code Review:
+Before the AI Code Review:
 
 ``` bash
 vendor/bin/sloppy review main
 ```
 
-O `review` prioriza os findings por risco, ajudando o reviewer a decidir
-onde concentrar atenção.
+`review` prioritizes findings by risk, helping the reviewer decide
+where to focus attention.
 
-Fluxo:
+Flow:
 
 ``` text
 git diff
@@ -536,47 +536,48 @@ AI Code Review
 Human Review
 ```
 
-Sloppy não substitui Code Review.
+Sloppy does not replace Code Review.
 
-Ele reduz ruído e aponta regiões do diff que merecem atenção.
+It reduces noise and points to regions of the diff that deserve
+attention.
 
 ------------------------------------------------------------------------
 
 ## 17. Sloppy Fix
 
-Para findings que podem ser corrigidos mecanicamente:
+For findings that can be fixed mechanically:
 
 ``` bash
 vendor/bin/sloppy fix
 ```
 
-O Sloppy pode delegar correções mecânicas ao Rector, limitar as
-alterações aos arquivos relevantes e executar Pint.
+Sloppy can delegate mechanical fixes to Rector, limit the changes to
+the relevant files, and run Pint.
 
-A regra deve ser:
+The rule should be:
 
 ``` text
-correção mecânica
+mechanical fix
       ↓
 Sloppy / Rector / Pint
 
-correção semântica
+semantic fix
       ↓
-Claude / desenvolvedor
+Claude / developer
       ↓
-testes
+tests
       ↓
 review
 ```
 
-Nunca permita que uma ferramenta automática altere silenciosamente
-regras de negócio apenas para eliminar um finding.
+Never let an automated tool silently change business rules just to
+eliminate a finding.
 
 ------------------------------------------------------------------------
 
 ## 18. Composer Scripts
 
-Exemplo de `composer.json`:
+Example `composer.json`:
 
 ``` json
 {
@@ -602,90 +603,98 @@ Exemplo de `composer.json`:
 }
 ```
 
-Contrato principal:
+Main contract:
 
 ``` bash
 composer quality
 ```
 
-Se retornar código diferente de `0`, a tarefa não terminou.
+If it returns a code other than `0`, the task is not finished.
 
 ------------------------------------------------------------------------
 
 ## 19. AI Code Review
 
-Depois que as verificações determinísticas passarem, execute um Code
-Review independente.
+After the deterministic checks pass, run an independent Code
+Review.
 
-Idealmente:
+`bartollo/pipeline-kit` automates triggering this step: it installs a
+`Stop` hook (`pipeline:ai-review-gate`) that runs `composer quality`
+whenever the session tries to end and, if it passes, blocks the task
+from finishing by explicitly asking for an independent review before
+stopping — once per diff, not repeatedly. Nothing replaces Human
+Review, but this ensures the step is always at least triggered,
+instead of depending on someone remembering to run it manually.
+
+Ideally:
 
 ``` text
-Claude / contexto A
+Claude / context A
        │
        ▼
-  implementação
+  implementation
        │
        ▼
 Sloppy + composer quality
        │
        ▼
-Claude / contexto B
+Claude / context B
        │
        ▼
    CODE REVIEW
 ```
 
-O reviewer deve receber:
+The reviewer should receive:
 
 ``` text
-REQUISITO
+REQUIREMENT
 +
 GIT DIFF
 +
-CONTEXTO ARQUITETURAL
+ARCHITECTURAL CONTEXT
 +
-RESULTADOS DOS TESTES
+TEST RESULTS
 +
-FINDINGS DO SLOPPY
+SLOPPY FINDINGS
 ```
 
-O segundo contexto não deve assumir que a implementação está correta
-apenas porque outro agente a produziu.
+The second context should not assume the implementation is correct
+just because another agent produced it.
 
 ------------------------------------------------------------------------
 
-## 20. Checklist do Code Review
+## 20. Code Review checklist
 
 ### Correctness
 
 -   bugs;
--   lógica invertida;
--   condições incompletas;
--   tratamento incorreto de `null`;
--   estados inválidos;
+-   inverted logic;
+-   incomplete conditions;
+-   incorrect `null` handling;
+-   invalid states;
 -   edge cases;
--   concorrência.
+-   concurrency.
 
 ### Laravel
 
 -   N+1;
--   eager loading ausente;
--   queries desnecessárias;
--   business logic em controllers;
--   validação fora de Form Requests;
--   autorização ausente;
--   transactions ausentes;
--   jobs que deveriam ser assíncronos.
+-   missing eager loading;
+-   unnecessary queries;
+-   business logic in controllers;
+-   validation outside Form Requests;
+-   missing authorization;
+-   missing transactions;
+-   jobs that should be asynchronous.
 
 ### Database
 
--   índices ausentes;
--   migrations problemáticas;
+-   missing indexes;
+-   problematic migrations;
 -   foreign keys;
 -   unique constraints;
 -   race conditions;
--   queries em loops;
--   operações não atômicas.
+-   queries in loops;
+-   non-atomic operations.
 
 ### Security
 
@@ -694,95 +703,95 @@ apenas porque outro agente a produziu.
 -   IDOR;
 -   SQL injection;
 -   XSS;
--   exposição de dados sensíveis;
+-   sensitive data exposure;
 -   secrets;
--   uploads inseguros;
--   validação insuficiente.
+-   insecure uploads;
+-   insufficient validation.
 
 ### Performance
 
 -   N+1;
--   queries duplicadas;
--   coleções gigantes em memória;
--   falta de paginação;
--   operações síncronas lentas;
--   processamento desnecessário.
+-   duplicated queries;
+-   huge collections in memory;
+-   lack of pagination;
+-   slow synchronous operations;
+-   unnecessary processing.
 
 ### Tests
 
--   comportamento novo sem teste;
--   assertions fracas;
--   testes que não provam o comportamento;
--   ausência de failure paths;
--   autorização não testada;
--   validação não testada;
--   regressões sem cobertura.
+-   new behavior without a test;
+-   weak assertions;
+-   tests that don't prove the behavior;
+-   missing failure paths;
+-   untested authorization;
+-   untested validation;
+-   uncovered regressions.
 
 ### Architecture
 
--   abstrações desnecessárias;
--   duplicação;
--   responsabilidades misturadas;
--   dependências inadequadas;
--   regras de domínio em controllers;
--   acoplamento desnecessário.
+-   unnecessary abstractions;
+-   duplication;
+-   mixed responsibilities;
+-   inadequate dependencies;
+-   domain rules in controllers;
+-   unnecessary coupling.
 
 ------------------------------------------------------------------------
 
-## 21. Severidade dos findings
+## 21. Finding severity
 
 Use:
 
 ``` text
 BLOCKER
-Erro grave que impede merge.
+Serious error that blocks the merge.
 
 HIGH
-Bug, vulnerabilidade ou problema importante.
+Bug, vulnerability or important problem.
 
 MEDIUM
-Problema real que deve ser corrigido.
+Real problem that should be fixed.
 
 LOW
-Melhoria válida, mas não crítica.
+Valid improvement, but not critical.
 
 INFO
-Observação ou sugestão opcional.
+Optional observation or suggestion.
 ```
 
-Exemplo:
+Example:
 
 ``` text
-[HIGH] Race condition na criação do pagamento
+[HIGH] Race condition when creating the payment
 
 PaymentService.php:82
 
-O código verifica se existe um pagamento e depois cria
-um novo registro em duas operações separadas.
+The code checks whether a payment exists and then creates
+a new record in two separate operations.
 
-Duas requests concorrentes podem passar pela verificação
-antes que qualquer uma faça o INSERT.
+Two concurrent requests can pass the check
+before either one performs the INSERT.
 
-Recomendação:
-Adicionar unique constraint no banco e tratar a colisão,
-ou tornar a operação atomicamente segura.
+Recommendation:
+Add a unique constraint at the database level and handle
+the collision, or make the operation atomically safe.
 ```
 
 ------------------------------------------------------------------------
 
-## 22. Code Review deve procurar bugs, não estilo
+## 22. Code Review should look for bugs, not style
 
-Evite:
+Avoid:
 
 ``` text
-"Eu escreveria este método de outra forma."
+"I would write this method differently."
 
-"Prefiro repository aqui."
+"I'd prefer a repository here."
 
-"Talvez este nome pudesse ser diferente."
+"Maybe this name could be different."
 ```
 
-Priorize:
+Prioritize:
 
 ``` text
 BUG
@@ -796,18 +805,18 @@ MISSING TEST
 ARCHITECTURE VIOLATION
 ```
 
-Pint já cuida de estilo mecânico.
+Pint already takes care of mechanical style.
 
-Sloppy já cobre vários padrões estruturais recorrentes.
+Sloppy already covers several recurring structural patterns.
 
-O reviewer deve usar seu contexto para procurar problemas que ainda
-escaparam dessas camadas.
+The reviewer should use their context to look for problems that
+still slipped past those layers.
 
 ------------------------------------------------------------------------
 
 ## 23. CLAUDE.md
 
-Adicione regras semelhantes a estas ao `CLAUDE.md`:
+Add rules similar to these to `CLAUDE.md`:
 
 ``` md
 # Laravel Development Rules
@@ -893,15 +902,15 @@ Never regenerate a baseline to hide a newly introduced problem.
 
 ## 24. GitHub Actions + Sloppy CI
 
-O CI deve repetir as verificações independentemente do agente.
+CI should repeat the checks independently of the agent.
 
-O Sloppy possui modo específico para CI:
+Sloppy has a specific mode for CI:
 
 ``` bash
 vendor/bin/sloppy ci
 ```
 
-Ele também pode ser integrado por GitHub Action:
+It can also be integrated via a GitHub Action:
 
 ``` yaml
 - uses: heyosseus/sloppy-action@v1
@@ -936,138 +945,138 @@ Pipeline:
                       Merge
 ```
 
-Mesmo que Claude execute tudo localmente, o CI deve repetir as
-verificações em ambiente limpo.
+Even if Claude runs everything locally, CI should repeat the checks
+in a clean environment.
 
 ------------------------------------------------------------------------
 
-## 25. Sloppy Baseline para projetos legados
+## 25. Sloppy Baseline for legacy projects
 
-Para uma base existente:
+For an existing codebase:
 
 ``` bash
 vendor/bin/sloppy baseline
 ```
 
-A ideia é aceitar explicitamente a dívida atual e impedir dívida nova.
+The idea is to explicitly accept the current debt and prevent new
+debt.
 
 ``` text
 LEGACY
 ────────────────────────────
-problemas existentes
+existing problems
         │
         ▼
 Sloppy baseline
         │
         ▼
-estado conhecido
+known state
 
-NOVO CÓDIGO
+NEW CODE
 ────────────────────────────
-Claude altera código
+Claude changes code
         │
         ▼
 Sloppy diff
         │
         ▼
-nova dívida?
+new debt?
    │         │
-  SIM       NÃO
+  YES        NO
    │         │
-corrigir   continuar
+  fix     continue
 ```
 
-Baseline não é licença para aumentar dívida.
+A baseline is not a license to increase debt.
 
 ------------------------------------------------------------------------
 
 ## 26. Sloppy Watch
 
-Durante desenvolvimento interativo:
+During interactive development:
 
 ``` bash
 vendor/bin/sloppy watch
 ```
 
-Pode ser útil em sessões longas com agentes, mantendo feedback contínuo
-enquanto arquivos são modificados.
+Can be useful in long agent sessions, keeping continuous feedback
+while files are changed.
 
 ------------------------------------------------------------------------
 
 ## 27. MCP
 
-O Sloppy também oferece servidor MCP para agentes que precisam solicitar
-scans sob demanda.
+Sloppy also offers an MCP server for agents that need to request
+scans on demand.
 
-Em uma configuração com Laravel Boost + Sloppy, a divisão conceitual
-fica:
+In a setup with Laravel Boost + Sloppy, the conceptual split is:
 
 ``` text
 Laravel Boost / MCP
-└── contexto Laravel
-    documentação
+└── Laravel context
+    documentation
     framework knowledge
 
 Sloppy / MCP
-└── qualidade da alteração
-    dívida introduzida
-    riscos estruturais
+└── quality of the change
+    introduced debt
+    structural risks
 ```
 
-Os dois são complementares.
+The two are complementary.
 
 ------------------------------------------------------------------------
 
 ## 28. Human Review
 
-AI Code Review e Sloppy não eliminam Human Review.
+AI Code Review and Sloppy do not eliminate Human Review.
 
-As ferramentas são boas para detectar sistematicamente:
+The tools are good at systematically detecting:
 
--   padrões problemáticos;
--   bugs potenciais;
--   dívida nova;
--   regressões;
--   problemas repetitivos;
--   ausência de testes.
+-   problematic patterns;
+-   potential bugs;
+-   new debt;
+-   regressions;
+-   repetitive problems;
+-   missing tests.
 
-O humano continua responsável por questões como:
+The human remains responsible for questions like:
 
--   o requisito está correto?
--   essa solução resolve o problema de produto?
--   a complexidade é justificável?
--   essa arquitetura faz sentido no longo prazo?
--   estamos resolvendo o problema certo?
+-   is the requirement correct?
+-   does this solution solve the product problem?
+-   is the complexity justified?
+-   does this architecture make sense long term?
+-   are we solving the right problem?
 
 ------------------------------------------------------------------------
 
 ## 29. Definition of Done
 
-Uma tarefa só é considerada concluída quando:
+A task is only considered complete when:
 
--   implementação está completa;
--   Sloppy hooks não apontam nova dívida relevante;
--   Pint passa;
--   PHPStan/Larastan passa;
--   Pest passa;
--   novos comportamentos possuem testes;
--   Architecture Tests passam;
--   Type Coverage respeita o mínimo;
--   Composer Audit passa;
--   `sloppy diff main` está aceitável;
--   `sloppy review main` foi analisado;
--   `composer quality` passa;
--   Git Diff foi revisado;
--   AI Code Review foi executado;
--   findings relevantes foram resolvidos;
--   `composer quality` passou novamente;
--   GitHub Actions passou;
--   Sloppy CI passou;
--   Human Review foi realizado quando necessário.
+-   the implementation is complete;
+-   Sloppy hooks don't flag relevant new debt;
+-   Pint passes;
+-   PHPStan/Larastan passes;
+-   Pest passes;
+-   new behaviors have tests;
+-   Architecture Tests pass;
+-   Type Coverage meets the minimum;
+-   Composer Audit passes;
+-   `sloppy diff main` is acceptable;
+-   `sloppy review main` has been reviewed;
+-   `composer quality` passes;
+-   the Git Diff has been reviewed;
+-   AI Code Review has run;
+-   relevant findings have been resolved;
+-   `composer quality` has passed again;
+-   GitHub Actions passed;
+-   Sloppy CI passed;
+-   Human Review was performed when necessary.
 
 ------------------------------------------------------------------------
 
-## 30. Pipeline final
+## 30. Final pipeline
 
 ``` text
                         TASK
@@ -1085,23 +1094,23 @@ Uma tarefa só é considerada concluída quando:
                   └───────┬───────┘
                           │
                           ▼
-                  alteração PHP
+                     PHP change
                           │
                           ▼
                   ┌───────────────┐
                   │ Sloppy Hook   │
                   └───────┬───────┘
                           │
-                    finding novo?
+                    new finding?
                      /         \
-                   SIM         NÃO
+                   YES          NO
                     │           │
                     ▼           ▼
-             Claude corrige   continuar
+              Claude fixes it  continue
                     │           │
                     └─────┬─────┘
                           ▼
-                       testes
+                        tests
                           │
                           ▼
                  composer quality
@@ -1111,7 +1120,7 @@ Uma tarefa só é considerada concluída quando:
                   FAIL         PASS
                     │           │
                     ▼           ▼
-                 corrigir   sloppy review
+                   fix     sloppy review
                     ▲           │
                     │           ▼
                     │     AI CODE REVIEW
@@ -1139,29 +1148,29 @@ Uma tarefa só é considerada concluída quando:
 
 ------------------------------------------------------------------------
 
-## 31. Regra fundamental
+## 31. Fundamental rule
 
-Não queremos:
+We don't want:
 
 ``` text
-Claude implementa
+Claude implements
        ↓
-Claude olha o próprio código
+Claude looks at its own code
        ↓
-"parece correto"
+"looks correct"
        ↓
 Merge
 ```
 
-Também não queremos depender exclusivamente de outro LLM para fiscalizar
-o primeiro.
+We also don't want to rely exclusively on another LLM to police the
+first one.
 
-Queremos:
+We want:
 
 ``` text
-Claude implementa
+Claude implements
        ↓
-Sloppy observa cada alteração
+Sloppy watches every change
        ↓
 Pint
        ↓
@@ -1177,9 +1186,9 @@ Security Audit
        ↓
 Sloppy Diff / Review
        ↓
-AI Reviewer independente
+Independent AI Reviewer
        ↓
-CI independente
+Independent CI
        ↓
 Sloppy CI
        ↓
@@ -1188,17 +1197,18 @@ Human Review
 Merge
 ```
 
-O ponto central é criar **feedback determinístico ao redor da IA**.
+The central point is to create **deterministic feedback around the
+AI**.
 
-> **Claude implementa. Laravel Boost fornece contexto. Sloppy detecta a
-> dívida típica do agente enquanto ele trabalha. Pint padroniza. PHPStan
-> analisa tipos. Pest verifica comportamento. Architecture Tests
-> protegem regras estruturais. Sloppy Review prioriza riscos no diff. Um
-> segundo contexto faz Code Review. O CI valida tudo novamente. Humanos
-> continuam responsáveis pelas decisões de engenharia.**
+> **Claude implements. Laravel Boost provides context. Sloppy detects
+> the agent's typical debt while it works. Pint standardizes. PHPStan
+> analyses types. Pest verifies behavior. Architecture Tests protect
+> structural rules. Sloppy Review prioritizes risks in the diff. A
+> second context performs Code Review. CI validates everything again.
+> Humans remain responsible for engineering decisions.**
 
 ------------------------------------------------------------------------
 
-## Referência
+## Reference
 
 Sloppy: https://github.com/Heyosseus/sloppy

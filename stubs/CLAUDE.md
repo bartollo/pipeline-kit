@@ -64,6 +64,9 @@ Sloppy is part of the development loop, not just CI.
 - Do not weaken tests to satisfy the pipeline.
 - Use `vendor/bin/sloppy diff main` / `vendor/bin/sloppy review main` before declaring work complete.
 - Mechanical fixes may use `vendor/bin/sloppy fix`, but semantic changes require review.
+- `sloppy diff` compares against git, not the working tree: a brand-new file that hasn't been
+  `git add`ed yet is invisible to it and the run reports "0 changed" even with real new code
+  sitting there. Stage new files (`git add`, no need to commit) before trusting a "0 changed" result.
 
 ## Definition of Done
 

@@ -19,9 +19,9 @@
         "pest": "pest --parallel",
         "types": "php -d memory_limit=1G vendor/bin/pest --type-coverage --min=95",
         "mutate": "pest --mutate --parallel --covered-only --min=80",
-        "sloppy": "sloppy scan",
-        "sloppy:diff": "sloppy diff main --fail-on=high",
-        "sloppy:review": "sloppy review main",
+        "sloppy": "php -d memory_limit=2G vendor/bin/sloppy scan",
+        "sloppy:diff": "php -d memory_limit=2G vendor/bin/sloppy diff main --fail-on=high",
+        "sloppy:review": "php -d memory_limit=2G vendor/bin/sloppy review main",
         "security": "composer audit",
         "quality": [
             "@lint",
